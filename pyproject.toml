@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "japanese-developer"
+version = "0.1.0"
+description = "Gemini CLI用の汎用コーディング環境セットアップツール。日本語強制・作業ログ自動記録・サーバー起動ブロック等のhookを一発導入。"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "shimatoshi"}]
+dependencies = [
+    "click>=8.0",
+]
+
+[project.scripts]
+japanese-developer = "japanese_developer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+japanese_developer = ["templates/**/*", "templates/*"]
