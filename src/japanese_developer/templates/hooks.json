@@ -33,8 +33,15 @@
           "type": "command",
           "command": "bash ~/.gemini/hooks/auto-worklog.sh",
           "name": "auto-worklog",
-          "description": "git commit後にWORK_LOG.mdへ自動追記する",
+          "description": "git commit後にlogs/へ自動追記する",
           "timeout": 10000
+        },
+        {
+          "type": "command",
+          "command": "bash ~/.gemini/hooks/pr-log-sync.sh",
+          "name": "pr-log-sync",
+          "description": "git push後にPRへ作業ログをコメント投稿する",
+          "timeout": 15000
         }
       ]
     }

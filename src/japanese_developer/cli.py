@@ -152,7 +152,7 @@ def status():
 
     # hookスクリプト
     hooks_dir = GEMINI_DIR / "hooks"
-    expected = ["enforce-japanese.sh", "block-server-start.sh", "auto-worklog.sh"]
+    expected = ["enforce-japanese.sh", "block-server-start.sh", "auto-worklog.sh", "pr-log-sync.sh"]
     for name in expected:
         _check_file(hooks_dir / name, f"hooks/{name}")
 
@@ -164,8 +164,8 @@ def uninstall():
     """japanese-developer が導入したhookを削除する"""
 
     hooks_dir = GEMINI_DIR / "hooks"
-    managed_hooks = ["enforce-japanese.sh", "block-server-start.sh", "auto-worklog.sh"]
-    managed_names = ["enforce-japanese", "block-server-start", "auto-worklog"]
+    managed_hooks = ["enforce-japanese.sh", "block-server-start.sh", "auto-worklog.sh", "pr-log-sync.sh"]
+    managed_names = ["enforce-japanese", "block-server-start", "auto-worklog", "pr-log-sync"]
 
     removed = []
 
