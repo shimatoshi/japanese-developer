@@ -168,7 +168,7 @@ def status():
 
     # hookスクリプト
     hooks_dir = GEMINI_DIR / "hooks"
-    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh"]
+    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh"]
     for name in expected:
         _check_file(hooks_dir / name, f"hooks/{name}")
 
@@ -180,8 +180,8 @@ def uninstall():
     """japanese-developer が導入したhookを削除する"""
 
     hooks_dir = GEMINI_DIR / "hooks"
-    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh"]
-    managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync"]
+    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh"]
+    managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync", "syntax-check"]
     managed_commands = ["plan.md", "review.md"]
 
     removed = []

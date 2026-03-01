@@ -44,6 +44,18 @@
           "timeout": 15000
         }
       ]
+    },
+    {
+      "matcher": "write_file|edit_file|create_file|replace_in_file|write_to_file",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/.gemini/hooks/syntax-check.sh",
+          "name": "syntax-check",
+          "description": "コード生成後の構文エラー自動チェック",
+          "timeout": 15000
+        }
+      ]
     }
   ]
 }
