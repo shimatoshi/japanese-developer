@@ -17,9 +17,9 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ~/.gemini/hooks/block-server-start.sh",
-          "name": "block-server-start",
-          "description": "サーバー起動コマンドをブロックする",
+          "command": "bash ~/.gemini/hooks/interactive-guard.sh",
+          "name": "interactive-guard",
+          "description": "対話型コマンド検知・サーバーBG強制",
           "timeout": 5000
         }
       ]

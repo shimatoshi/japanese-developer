@@ -4,6 +4,9 @@ import json
 import os
 import shutil
 import stat
+import subprocess
+import sys
+from datetime import datetime
 from pathlib import Path
 
 import click
@@ -152,7 +155,7 @@ def status():
 
     # hookスクリプト
     hooks_dir = GEMINI_DIR / "hooks"
-    expected = ["enforce-japanese.sh", "block-server-start.sh", "auto-worklog.sh", "pr-log-sync.sh"]
+    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh"]
     for name in expected:
         _check_file(hooks_dir / name, f"hooks/{name}")
 
@@ -164,8 +167,8 @@ def uninstall():
     """japanese-developer が導入したhookを削除する"""
 
     hooks_dir = GEMINI_DIR / "hooks"
-    managed_hooks = ["enforce-japanese.sh", "block-server-start.sh", "auto-worklog.sh", "pr-log-sync.sh"]
-    managed_names = ["enforce-japanese", "block-server-start", "auto-worklog", "pr-log-sync"]
+    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh"]
+    managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync"]
 
     removed = []
 
@@ -221,6 +224,257 @@ def _check_file(path: Path, label: str):
         click.echo(f"  ✓ {label}（{size} bytes）")
     else:
         click.echo(f"  ✗ {label} が見つかりません")
+
+
+def _run_cmd(cmd: str) -> str:
+    """コマンドを実行して出力を返す。失敗時は空文字。"""
+    try:
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, text=True, timeout=10
+        )
+        return result.stdout.strip()
+    except Exception:
+        return ""
+
+
+def _collect_env_info() -> dict:
+    """環境情報を自動収集する。"""
+    info = {}
+    info["日時"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    info["OS"] = _run_cmd("uname -a") or "取得失敗"
+    info["Python"] = _run_cmd("python3 --version") or _run_cmd("python --version") or "未インストール"
+    info["Node.js"] = _run_cmd("node --version") or "未インストール"
+    info["npm"] = _run_cmd("npm --version") or "未インストール"
+    info["git"] = _run_cmd("git --version") or "未インストール"
+    info["カレントディレクトリ"] = os.getcwd()
+
+    # git情報（リポジトリ内の場合のみ）
+    git_status = _run_cmd("git status --short 2>/dev/null")
+    if git_status:
+        info["git status"] = git_status
+    git_log = _run_cmd("git log --oneline -3 2>/dev/null")
+    if git_log:
+        info["直近コミット"] = git_log
+    git_branch = _run_cmd("git branch --show-current 2>/dev/null")
+    if git_branch:
+        info["ブランチ"] = git_branch
+
+    # package.json があれば依存パッケージ
+    pkg_path = Path.cwd() / "package.json"
+    if pkg_path.exists():
+        try:
+            with open(pkg_path) as f:
+                pkg = json.load(f)
+            deps = pkg.get("dependencies", {})
+            dev_deps = pkg.get("devDependencies", {})
+            if deps or dev_deps:
+                dep_lines = [f"  {k}: {v}" for k, v in {**deps, **dev_deps}.items()]
+                info["package.json 依存関係"] = "\n".join(dep_lines)
+        except Exception:
+            pass
+
+    # requirements.txt があれば
+    req_path = Path.cwd() / "requirements.txt"
+    if req_path.exists():
+        try:
+            content = req_path.read_text().strip()
+            if content:
+                info["requirements.txt"] = content
+        except Exception:
+            pass
+
+    return info
+
+
+def _read_multiline(prompt_msg: str) -> str:
+    """複数行入力を受け付ける。空行で終了。"""
+    click.echo(prompt_msg)
+    click.secho("  （入力後、空行でEnterを押すと確定）", fg="bright_black")
+    lines = []
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        if line == "":
+            if lines:
+                break
+            continue
+        lines.append(line)
+    return "\n".join(lines)
+
+
+@main.command()
+@click.option("--output", "-o", type=click.Path(), help="レポートをファイルに保存")
+@click.option("--auto", "auto_only", is_flag=True, help="対話をスキップして環境情報のみ収集")
+def error(output, auto_only):
+    """エラー情報を収集してコーディングエージェント用レポートを生成する"""
+
+    click.echo()
+    click.secho("🔍 エラー診断レポート作成", fg="cyan", bold=True)
+    click.echo()
+
+    # --- 対話パート ---
+    user_answers = {}
+    if not auto_only:
+        click.secho("エラーについて教えてください（エージェントに渡すための情報収集です）", fg="yellow")
+        click.echo()
+
+        # 1. 何をしようとしていたか
+        user_answers["やろうとしていたこと"] = click.prompt(
+            "❶ 何をしようとしていた？（例: npm run devでサーバーを起動しようとした）"
+        )
+        click.echo()
+
+        # 2. エラーメッセージ
+        user_answers["エラーメッセージ"] = _read_multiline(
+            "❷ エラーメッセージを貼り付けてください:"
+        )
+        click.echo()
+
+        # 3. 実行したコマンド
+        user_answers["実行したコマンド"] = click.prompt(
+            "❸ 実行したコマンドは？（例: npm run dev）",
+            default="", show_default=False
+        )
+        click.echo()
+
+        # 4. いつから
+        click.echo("❹ いつから発生している？")
+        choices = {"1": "最初から（一度も動いたことがない）", "2": "さっきまで動いてた", "3": "わからない"}
+        for k, v in choices.items():
+            click.echo(f"  {k}. {v}")
+        since = click.prompt("番号を選択", type=click.Choice(["1", "2", "3"]), default="3")
+        user_answers["発生時期"] = choices[since]
+        click.echo()
+
+        # 5. 最近変更したこと
+        user_answers["最近の変更"] = click.prompt(
+            "❺ 最近変更したことは？（例: パッケージを追加した、設定ファイルをいじった）",
+            default="特になし / わからない", show_default=True
+        )
+        click.echo()
+    else:
+        click.echo("--auto: 環境情報のみ収集します")
+        click.echo()
+
+    # --- 環境情報収集 ---
+    click.secho("環境情報を収集中...", fg="bright_black")
+    env_info = _collect_env_info()
+
+    # --- レポート生成 ---
+    report_lines = []
+    report_lines.append("# エラー診断レポート")
+    report_lines.append("")
+    report_lines.append(f"生成日時: {env_info.pop('日時')}")
+    report_lines.append("")
+
+    if user_answers:
+        report_lines.append("## エラー内容")
+        report_lines.append("")
+        for key, val in user_answers.items():
+            if "\n" in val:
+                report_lines.append(f"### {key}")
+                report_lines.append("```")
+                report_lines.append(val)
+                report_lines.append("```")
+            else:
+                report_lines.append(f"- **{key}**: {val}")
+        report_lines.append("")
+
+    report_lines.append("## 環境情報")
+    report_lines.append("")
+    for key, val in env_info.items():
+        if "\n" in val:
+            report_lines.append(f"### {key}")
+            report_lines.append("```")
+            report_lines.append(val)
+            report_lines.append("```")
+        else:
+            report_lines.append(f"- **{key}**: {val}")
+    report_lines.append("")
+
+    report = "\n".join(report_lines)
+
+    # --- 出力 ---
+    click.echo()
+    click.secho("━" * 50, fg="cyan")
+    click.echo(report)
+    click.secho("━" * 50, fg="cyan")
+
+    if output:
+        out_path = Path(output)
+        out_path.write_text(report, encoding="utf-8")
+        click.echo()
+        click.secho(f"📄 レポートを保存しました: {out_path}", fg="green")
+
+    click.echo()
+    click.secho("使い方:", fg="yellow")
+    click.echo("  上のレポートをコピーしてコーディングエージェントに貼り付けてください。")
+    click.echo("  エージェントがエラーの原因を診断してくれます。")
+
+
+TERMUX_UI_SETTINGS = {
+    "useAlternateBuffer": False,
+    "hideBanner": True,
+    "hideFooter": True,
+    "hideContextSummary": True,
+    "hideTips": True,
+    "incrementalRendering": True,
+}
+
+TERMUX_ALIASES = """
+# Gemini CLI - Termux aliases (japanese-developer)
+alias gemini-safe='NO_COLOR=1 gemini'
+alias gemini-plain='gemini --screenReader'
+"""
+
+
+@main.command(name="termux-setup")
+def termux_setup():
+    """Termux環境向けのGemini CLI UI最適化を適用する"""
+
+    settings_path = GEMINI_DIR / "settings.json"
+
+    if settings_path.exists():
+        with open(settings_path, "r") as f:
+            settings = json.load(f)
+    else:
+        settings = {}
+
+    # UI設定をマージ
+    if "ui" not in settings:
+        settings["ui"] = {}
+    settings["ui"].update(TERMUX_UI_SETTINGS)
+
+    with open(settings_path, "w") as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+
+    click.echo()
+    click.secho("✅ Termux UI最適化を適用しました", fg="green", bold=True)
+    click.echo()
+    click.secho("適用した設定:", fg="cyan")
+    for key, val in TERMUX_UI_SETTINGS.items():
+        click.echo(f"  ✓ {key}: {val}")
+
+    # bashrc エイリアス
+    bashrc = Path.home() / ".bashrc"
+    marker = "# Gemini CLI - Termux aliases (japanese-developer)"
+    if bashrc.exists() and marker in bashrc.read_text():
+        click.echo()
+        click.echo("  - bashrcエイリアス（既に存在）")
+    else:
+        with open(bashrc, "a") as f:
+            f.write(TERMUX_ALIASES)
+        click.echo()
+        click.secho("bashrcに追加:", fg="cyan")
+        click.echo("  ✓ gemini-safe  (色なしモード)")
+        click.echo("  ✓ gemini-plain (screenReaderモード)")
+
+    click.echo()
+    click.secho("次にやること:", fg="cyan")
+    click.echo("  1. source ~/.bashrc でエイリアスを反映")
+    click.echo("  2. gemini を起動してUI改善を確認")
 
 
 if __name__ == "__main__":
