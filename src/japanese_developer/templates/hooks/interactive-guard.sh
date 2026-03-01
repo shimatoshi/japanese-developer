@@ -86,18 +86,8 @@ if [[ "$COMMAND" =~ ^ssh[[:space:]] ]] && [[ ! "$COMMAND" =~ [[:space:]][\'\"] ]
   fi
 fi
 
-# --- 長時間実行サーバー系コマンド (フォアグラウンドで止まる) ---
-# & でバックグラウンド実行させ、PIDを表示して任意で kill できるようにする
-# 末尾が & で終わるかチェック（&& は除外）
-ENDS_WITH_BG=false
-if echo "$COMMAND" | grep -qE '[^&]&[[:space:]]*$'; then
-  ENDS_WITH_BG=true
-fi
-
-# --- 長時間実行サーバー系コマンド (フォアグラウンドで止まる) ---
-# コマンド末尾に & が無ければ deny して & 付きの具体例を提示
-SERVER_BG_REASON="BLOCKED: コマンド末尾に & を追加して再実行してください。正しい例: EXAMPLE &  ※ & を付けないとターミナルがハングします。"
-
+# --- 長時間実行サーバー系コマンド ---
+# サーバー起動はCLI内では不可能。ユーザーに別ターミナルでの起動を依頼させる。
 IS_SERVER=false
 
 # npm/yarn/pnpm run dev|start|serve|preview
@@ -120,10 +110,14 @@ if [[ "$COMMAND" =~ (flask[[:space:]]+run|python.*manage\.py[[:space:]]+runserve
   IS_SERVER=true
 fi
 
-if [ "$IS_SERVER" = true ] && [ "$ENDS_WITH_BG" = false ]; then
-  # 元のコマンドに & を付けた具体例を生成
+# python -m http.server
+if [[ "$COMMAND" =~ python.*http\.server ]]; then
+  IS_SERVER=true
+fi
+
+if [ "$IS_SERVER" = true ]; then
   EXAMPLE=$(echo "$COMMAND" | sed 's/[[:space:]]*$//')
-  FINAL_REASON="BLOCKED: コマンド末尾に & を追加して再実行してください。正しい例: ${EXAMPLE} &  ※ & を付けないとターミナルがハングします。"
+  FINAL_REASON="BLOCKED: サーバー起動はこのターミナル内では実行できません。ユーザーに「別のターミナルで ${EXAMPLE} を実行してください」と伝えてください。サーバーが起動済みかどうかは curl で確認できます。"
   echo "{\"decision\": \"deny\", \"reason\": \"$FINAL_REASON\"}"
   exit 0
 fi
