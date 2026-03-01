@@ -83,6 +83,19 @@ def setup(force):
         else:
             skipped.append(f"hooks/{script.name}（既に存在）")
 
+    # --- カスタムコマンド ---
+    commands_dir = GEMINI_DIR / "commands"
+    commands_dir.mkdir(parents=True, exist_ok=True)
+    commands_src = TEMPLATES_DIR / "commands"
+    if commands_src.exists():
+        for cmd_file in commands_src.iterdir():
+            dest = commands_dir / cmd_file.name
+            if not dest.exists() or force:
+                shutil.copy2(cmd_file, dest)
+                installed.append(f"commands/{cmd_file.name}")
+            else:
+                skipped.append(f"commands/{cmd_file.name}（既に存在）")
+
     # --- settings.json へhook設定をマージ ---
     settings_path = GEMINI_DIR / "settings.json"
     hooks_json_path = TEMPLATES_DIR / "hooks.json"
@@ -169,8 +182,17 @@ def uninstall():
     hooks_dir = GEMINI_DIR / "hooks"
     managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh"]
     managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync"]
+    managed_commands = ["plan.md", "review.md"]
 
     removed = []
+
+    # カスタムコマンド削除
+    commands_dir = GEMINI_DIR / "commands"
+    for name in managed_commands:
+        path = commands_dir / name
+        if path.exists():
+            path.unlink()
+            removed.append(f"commands/{name}")
 
     # hookスクリプト削除
     for name in managed_hooks:
