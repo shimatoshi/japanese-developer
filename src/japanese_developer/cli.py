@@ -181,7 +181,7 @@ def status():
 
     # hookスクリプト
     hooks_dir = GEMINI_DIR / "hooks"
-    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh"]
+    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh", "font-select.sh"]
     for name in expected:
         _check_file(hooks_dir / name, f"hooks/{name}")
 
@@ -193,7 +193,7 @@ def uninstall():
     """japanese-developer が導入したhookを削除する"""
 
     hooks_dir = GEMINI_DIR / "hooks"
-    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh"]
+    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh", "font-select.sh"]
     managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync", "syntax-check", "primer"]
     managed_commands = ["plan.md", "review.md"]
 
@@ -480,7 +480,7 @@ jd-primer() {
         5) echo ""; echo "  無責任者連絡先（無保証・無責任）:"; echo "  shimadatoshiyuki839@gmail.com"; echo "" ;;
         6) echo ""; echo "  git連携:"; if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then echo "  ユーザー: $(git config user.name)"; echo "  ブランチ: $(git branch --show-current)"; echo "  リモート: $(git remote get-url origin 2>/dev/null || echo なし)"; echo "  未コミット: $(git status --short | wc -l | tr -d ' ')件"; else echo "  （gitリポジトリ外）"; fi; echo "" ;;
         7) echo ""; echo "  コマンド一覧:"; echo "  japanese-developer setup/status/error/termux-setup/uninstall"; if [ -d "$HOME/.gemini/commands" ]; then for f in "$HOME/.gemini/commands"/*.md; do [ -f "$f" ] && echo "  /$(basename "$f" .md)"; done; fi; echo "" ;;
-        8) echo ""; echo "  視覚設定:"; echo "  フォント: ~/.termux/font.ttf にUDフォントを配置"; echo "  文字サイズ: ピンチ操作 or font-size=14 in termux.properties"; echo "  反映: termux-reload-settings"; echo "" ;;
+        8) if [ -f "$HOME/.gemini/hooks/font-select.sh" ]; then bash "$HOME/.gemini/hooks/font-select.sh"; else echo ""; echo "  font-select.sh が見つかりません。japanese-developer setup --force を実行してください。"; echo ""; fi ;;
         *) echo "  1〜8の番号を入力してください。" ;;
       esac
     done
