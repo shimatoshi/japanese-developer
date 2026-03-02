@@ -469,6 +469,21 @@ PRIMER_DISPLAY_SCRIPT = """
 jd-primer() {
   if [ -f "$HOME/.gemini/hooks/primer.sh" ]; then
     echo '{}' | bash "$HOME/.gemini/hooks/primer.sh" 2>&1 >/dev/null
+    while true; do
+      read -r -p "  (番号で詳細表示 / エンターで続行) " choice
+      case "$choice" in
+        "") break ;;
+        1) echo ""; echo "  Termuxとは？"; echo "  スマホの中にある「キッチン」のようなものです。"; echo "  Node.jsやPythonは鍋や包丁のような調理道具で、"; echo "  gitは冷蔵庫（材料の保管と出し入れ）にあたります。"; echo "  どんな道具を使って何を作るかはすべてあなた次第です。"; echo "" ;;
+        2) echo ""; echo "  gitとは？"; echo "  作ったモノの「セーブデータ管理」です。"; echo "  git add（材料を並べる）→ git commit（調理完了の記録）"; echo "  → git push（冷蔵庫に保存）が基本の流れです。"; echo "" ;;
+        3) echo ""; echo "  Gemini CLIとは？"; echo "  Googleが作ったAIの助手です。"; echo "  「これ作って」と言えばコードを書きますし、"; echo "  「これ何？」と聞けば説明してくれます。"; echo "" ;;
+        4) echo ""; echo "  コーディングエージェントとは？"; echo "  AIがコードの読み書き・実行・デバッグまで自律的にやってくれる仕組み。"; echo "  あなたがシェフで、エージェントは腕のいい助手です。"; echo "" ;;
+        5) echo ""; echo "  無責任者連絡先（無保証・無責任）:"; echo "  shimadatoshiyuki839@gmail.com"; echo "" ;;
+        6) echo ""; echo "  git連携:"; if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then echo "  ユーザー: $(git config user.name)"; echo "  ブランチ: $(git branch --show-current)"; echo "  リモート: $(git remote get-url origin 2>/dev/null || echo なし)"; echo "  未コミット: $(git status --short | wc -l | tr -d ' ')件"; else echo "  （gitリポジトリ外）"; fi; echo "" ;;
+        7) echo ""; echo "  コマンド一覧:"; echo "  japanese-developer setup/status/error/termux-setup/uninstall"; if [ -d "$HOME/.gemini/commands" ]; then for f in "$HOME/.gemini/commands"/*.md; do [ -f "$f" ] && echo "  /$(basename "$f" .md)"; done; fi; echo "" ;;
+        8) echo ""; echo "  視覚設定:"; echo "  フォント: ~/.termux/font.ttf にUDフォントを配置"; echo "  文字サイズ: ピンチ操作 or font-size=14 in termux.properties"; echo "  反映: termux-reload-settings"; echo "" ;;
+        *) echo "  1〜8の番号を入力してください。" ;;
+      esac
+    done
   fi
 }
 """
