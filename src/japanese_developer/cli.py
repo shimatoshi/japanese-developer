@@ -464,10 +464,20 @@ TERMUX_UI_SETTINGS = {
     "incrementalRendering": True,
 }
 
+PRIMER_DISPLAY_SCRIPT = """
+# japanese-developer: gemini起動時プライマー表示
+jd-primer() {
+  if [ -f "$HOME/.gemini/hooks/primer.sh" ]; then
+    echo '{}' | bash "$HOME/.gemini/hooks/primer.sh" 2>&1 >/dev/null
+  fi
+}
+"""
+
 TERMUX_ALIASES = """
 # Gemini CLI - Termux aliases (japanese-developer)
-alias gemini-safe='NO_COLOR=1 gemini'
-alias gemini-plain='gemini --screenReader'
+alias gemini='jd-primer && trap "" SIGWINCH && command gemini'
+alias gemini-safe='jd-primer && trap "" SIGWINCH && NO_COLOR=1 command gemini'
+alias gemini-plain='jd-primer && trap "" SIGWINCH && command gemini --screenReader'
 """
 
 
@@ -498,19 +508,36 @@ def termux_setup():
     for key, val in TERMUX_UI_SETTINGS.items():
         click.echo(f"  ✓ {key}: {val}")
 
-    # bashrc エイリアス
+    # bashrc エイリアス・プライマー関数
     bashrc = Path.home() / ".bashrc"
-    marker = "# Gemini CLI - Termux aliases (japanese-developer)"
-    if bashrc.exists() and marker in bashrc.read_text():
-        click.echo()
-        click.echo("  - bashrcエイリアス（既に存在）")
-    else:
+    bashrc_content = bashrc.read_text() if bashrc.exists() else ""
+
+    primer_marker = "# japanese-developer: gemini起動時プライマー表示"
+    alias_marker = "# Gemini CLI - Termux aliases (japanese-developer)"
+
+    added_items = []
+
+    if primer_marker not in bashrc_content:
+        with open(bashrc, "a") as f:
+            f.write(PRIMER_DISPLAY_SCRIPT)
+        added_items.append("jd-primer 関数（起動時メニュー表示）")
+
+    bashrc_content = bashrc.read_text() if bashrc.exists() else ""
+    if alias_marker not in bashrc_content:
         with open(bashrc, "a") as f:
             f.write(TERMUX_ALIASES)
+        added_items.append("gemini エイリアス（プライマー付き起動）")
+        added_items.append("gemini-safe（色なしモード）")
+        added_items.append("gemini-plain（screenReaderモード）")
+
+    if added_items:
         click.echo()
         click.secho("bashrcに追加:", fg="cyan")
-        click.echo("  ✓ gemini-safe  (色なしモード)")
-        click.echo("  ✓ gemini-plain (screenReaderモード)")
+        for item in added_items:
+            click.echo(f"  ✓ {item}")
+    else:
+        click.echo()
+        click.echo("  - bashrcエイリアス（既に存在）")
 
     click.echo()
     click.secho("次にやること:", fg="cyan")

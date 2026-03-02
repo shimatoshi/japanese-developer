@@ -50,6 +50,29 @@ primer_content=$(cat "$PRIMER_PATH")
 primer_content="${primer_content//\{\{GIT_INFO\}\}/$git_info}"
 primer_content="${primer_content//\{\{CUSTOM_COMMANDS\}\}/$custom_commands}"
 
+# --- ターミナルにメニュー表示（stderrで直接ユーザーに見せる） ---
+{
+  echo ""
+  echo "━━━ japanese-developer プライマー ━━━"
+  echo ""
+  echo "  1. Termuxとは？     — スマホの中のキッチン"
+  echo "  2. gitとは？        — セーブデータ管理"
+  echo "  3. Gemini CLIとは？ — AIの助手"
+  echo "  4. エージェントとは？— 腕のいい助手"
+  echo "  5. 連絡先           — shimadatoshiyuki839@gmail.com"
+  if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+    echo "  6. git連携          — ${git_branch} @ $(basename "${git_remote%.git}" 2>/dev/null || echo '-')"
+  else
+    echo "  6. git連携          — (リポジトリ外)"
+  fi
+  echo "  7. コマンド一覧     — setup / status / error 等"
+  echo "  8. 視覚設定         — UDフォント・文字サイズ"
+  echo ""
+  echo "  詳しく知りたい項目の番号を伝えてください。"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+} >&2
+
 # --- JSON出力（改行をエスケープ） ---
 escaped=$(printf '%s' "$primer_content" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
 
