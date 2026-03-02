@@ -71,6 +71,15 @@ def setup(force):
     else:
         skipped.append("GEMINI.md（既に存在。--force で上書き）")
 
+    # --- primer.md ---
+    primer_md = GEMINI_DIR / "primer.md"
+    src_primer_md = TEMPLATES_DIR / "primer.md"
+    if not primer_md.exists() or force:
+        shutil.copy2(src_primer_md, primer_md)
+        installed.append("primer.md")
+    else:
+        skipped.append("primer.md（既に存在。--force で上書き）")
+
     # --- hookスクリプト ---
     hooks_src = TEMPLATES_DIR / "hooks"
     for script in hooks_src.iterdir():
@@ -151,6 +160,10 @@ def status():
     gemini_md = GEMINI_DIR / "GEMINI.md"
     _check_file(gemini_md, "GEMINI.md")
 
+    # primer.md
+    primer_md = GEMINI_DIR / "primer.md"
+    _check_file(primer_md, "primer.md")
+
     # settings.json のhook設定
     settings_path = GEMINI_DIR / "settings.json"
     if settings_path.exists():
@@ -168,7 +181,7 @@ def status():
 
     # hookスクリプト
     hooks_dir = GEMINI_DIR / "hooks"
-    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh"]
+    expected = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh"]
     for name in expected:
         _check_file(hooks_dir / name, f"hooks/{name}")
 
@@ -180,11 +193,17 @@ def uninstall():
     """japanese-developer が導入したhookを削除する"""
 
     hooks_dir = GEMINI_DIR / "hooks"
-    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh"]
-    managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync", "syntax-check"]
+    managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh"]
+    managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync", "syntax-check", "primer"]
     managed_commands = ["plan.md", "review.md"]
 
     removed = []
+
+    # primer.md 削除
+    primer_md = GEMINI_DIR / "primer.md"
+    if primer_md.exists():
+        primer_md.unlink()
+        removed.append("primer.md")
 
     # カスタムコマンド削除
     commands_dir = GEMINI_DIR / "commands"

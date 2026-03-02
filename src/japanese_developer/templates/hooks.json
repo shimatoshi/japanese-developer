@@ -7,6 +7,12 @@
           "command": "bash ~/.gemini/hooks/enforce-japanese.sh",
           "name": "enforce-japanese",
           "description": "全出力を日本語に強制する"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/.gemini/hooks/primer.sh",
+          "name": "primer",
+          "description": "起動時プライマー情報を注入する"
         }
       ]
     }
