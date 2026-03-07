@@ -195,7 +195,7 @@ def uninstall():
     hooks_dir = GEMINI_DIR / "hooks"
     managed_hooks = ["enforce-japanese.sh", "interactive-guard.sh", "auto-worklog.sh", "pr-log-sync.sh", "syntax-check.sh", "primer.sh", "font-select.sh"]
     managed_names = ["enforce-japanese", "interactive-guard", "auto-worklog", "pr-log-sync", "syntax-check", "primer"]
-    managed_commands = ["plan.md", "review.md"]
+    managed_commands = ["plan.md", "review.md", "task.md", "contact.md"]
 
     removed = []
 
@@ -481,7 +481,10 @@ jd-primer() {
         6) echo ""; echo "  git連携:"; if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then echo "  ユーザー: $(git config user.name)"; echo "  ブランチ: $(git branch --show-current)"; echo "  リモート: $(git remote get-url origin 2>/dev/null || echo なし)"; echo "  未コミット: $(git status --short | wc -l | tr -d ' ')件"; else echo "  （gitリポジトリ外）"; fi; echo "" ;;
         7) echo ""; echo "  コマンド一覧:"; echo "  japanese-developer setup/status/error/termux-setup/uninstall"; if [ -d "$HOME/.gemini/commands" ]; then for f in "$HOME/.gemini/commands"/*.md; do [ -f "$f" ] && echo "  /$(basename "$f" .md)"; done; fi; echo "" ;;
         8) if [ -f "$HOME/.gemini/hooks/font-select.sh" ]; then bash "$HOME/.gemini/hooks/font-select.sh"; else echo ""; echo "  font-select.sh が見つかりません。japanese-developer setup --force を実行してください。"; echo ""; fi ;;
-        *) echo "  1〜8の番号を入力してください。" ;;
+        9) echo ""; echo "  GitHubとは？"; echo "  プログラムのコードを保存・共有できる「共有倉庫」です。"; echo "  自分の作業をチームに共有したり、他の人の作業を取り込んだりできます。"; echo "  このチームではGitHubを通じてコードのやり取りをします。"; echo "" ;;
+        10) echo ""; echo "  GitHub連携（ログイン）"; echo "  既にGitHubアカウントを持っている人はこちら。"; echo ""; echo "  ターミナルで以下を実行してください:"; echo "    gh auth login"; echo ""; echo "  聞かれたら:"; echo "    1. GitHub.com を選択"; echo "    2. HTTPS を選択"; echo "    3. Yes を選択（gitの認証にも使う）"; echo "    4. Login with a web browser を選択"; echo "    5. 表示されるコードをメモ → ブラウザで入力"; echo ""; echo "  完了したら gh auth status で確認できます。"; echo "" ;;
+        11) echo ""; echo "  GitHubアカウント作成"; echo "  アカウントを持っていない人はこちら。"; echo ""; echo "  1. ブラウザで https://github.com を開く"; echo "  2. Sign up をタップ"; echo "  3. メールアドレス・パスワード・ユーザー名を入力"; echo "  4. メールに届く確認コードを入力"; echo "  5. 完了したら 10番 の手順でログインしてください"; echo "" ;;
+        *) echo "  1〜11の番号を入力してください。" ;;
       esac
     done
   fi

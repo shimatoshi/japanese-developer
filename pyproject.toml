@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "japanese-developer"
-version = "0.3.0"
+version = "0.4.0"
 description = "Gemini CLI用の汎用コーディング環境セットアップツール。日本語強制・作業ログ自動記録・対話型コマンドガード・Termux最適化を一発導入。"
 requires-python = ">=3.10"
 license = {text = "MIT"}
